@@ -1,3 +1,11 @@
+exports.handler = (event, context, callback) => {
+
+  var itemList = event.itemList;
+
+  processList(itemList, context);
+
+}
+
 function processList(itemList, context) {
 
     var item = itemList.shift();
