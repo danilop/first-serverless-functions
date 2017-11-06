@@ -1,3 +1,5 @@
+"use strict";
+
 console.log('Loading function');
 
 const salutation = ('SALUTATION' in process.env) ? process.env.SALUTATION : 'Hello';
