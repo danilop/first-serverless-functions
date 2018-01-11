@@ -1,58 +1,77 @@
 'use strict';
 
-const logLevels = { error: 4, warn: 3, info: 2, verbose: 1, debug: 0 };
+console.log('Loading function...');
 
-const currentLogLevel = (process.env.LOG_LEVEL !== null &&
-  process.env.LOG_LEVEL !== undefined) ? process.env.LOG_LEVEL : 'info';
+const TABLE = 'somedata';
 
-function logWhen(logLevel, statement) {
-    if(logLevels[logLevel] >= logLevels[currentLogLevel] ) {
-        console.log(logLevel + ': ' + statement);
+const AWS = require('aws-sdk');
+
+//const AWSXRay = require('aws-xray-sdk');
+//const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+
+const docClient = new AWS.DynamoDB.DocumentClient();
+
+function getQueryStringParameters(event, parameterName, defaultValue) {
+    let value;
+    if (event.queryStringParameters !== null &&
+        event.queryStringParameters !== undefined &&
+        parameterName in event.queryStringParameters) {
+        value = event.queryStringParameters[parameterName];
     }
+    else {
+        value = defaultValue;
+    }
+    console.log('QueryStringParameters ' + parameterName + ' = ' + value);
+    return value;
 }
 
-function doWhen(logLevel, callback) {
-    if(logLevels[logLevel] >= logLevels[currentLogLevel] ) {
-        callback();
-    }
+function readFromDynamoDB(id) {
+    return docClient.get({
+        TableName: TABLE,
+        Key: { 'id': id }
+    }).promise();
 }
 
-logWhen('info', 'Loading hello world function');
+function writeToDynamoDB(id, data) {
+    return docClient.put({
+        TableName: TABLE,
+        Item: {
+            'id': id,
+            'data': data
+        }
+    }).promise();
+}
 
 exports.handler = (event, context, callback) => {
-    var name = "World";
-    var responseCode = 200;
-    logWhen('info', 'request: ' + JSON.stringify(event));
+    console.log('event: ' + JSON.stringify(event));
 
-    if (event.queryStringParameters !== null &&
-      event.queryStringParameters !== undefined) {
-        if ('name' in event.queryStringParameters) {
-            name = event.queryStringParameters.name;
-            logWhen('debug', 'Received name: ' + name);
-        }
-        if ('httpStatus' in event.queryStringParameters) {
-            responseCode = event.queryStringParameters.httpStatus;
-            logWhen('debug', 'Received http status: ' + responseCode);
-        }
-    }
-
-    var responseBody = {
-        message: 'Hello ' + name + '!'
-    };
-
-    doWhen('debug', () => {
-      responseBody.input = event;
+    const processResponse = (res) => callback(null, {
+        statusCode: '200',
+        body: JSON.stringify(res)
     });
 
-    var response = {
-        statusCode: responseCode,
-        headers: {
-          'x-custom-header' : 'my custom header value'
-        },
-        body: JSON.stringify(responseBody)
-    };
+    const processError = (err) => callback(null, {
+        statusCode: '400',
+        body: err.message
+    });
 
-    logWhen('info', 'response: ' + JSON.stringify(response));
+    let operation = getQueryStringParameters(event, 'op', 'r');
+    let id = getQueryStringParameters(event, 'id', 'none');
+    let data = getQueryStringParameters(event, 'data', 'empty');
 
-    callback(null, response);
+    console.log('operation: ' + operation);
+    console.log('id: ' + id);
+    console.log('data: ' + data);
+
+    switch (operation) {
+        case 'r':
+            readFromDynamoDB(id).then(processResponse).catch(processError);
+            break;
+        case 'w':
+            writeToDynamoDB(id, data).then(processResponse).catch(processError);
+            break;
+        default:
+            console.log('Unknown op');
+    }
+
 };

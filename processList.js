@@ -1,6 +1,6 @@
 exports.handler = (event, context, callback) => {
 
-  var itemList = event.itemList;
+  let itemList = event.itemList;
 
   processList(itemList, context);
 
@@ -8,7 +8,7 @@ exports.handler = (event, context, callback) => {
 
 function processList(itemList, context) {
 
-    var item = itemList.shift();
+    let item = itemList.shift();
 
     processItem(item, () => {
         if (itemList.length === 0) {
@@ -24,4 +24,9 @@ function processList(itemList, context) {
         }
     });
 
+}
+
+function processItem(item, callback) {
+    // USE item HERE
+    callback();
 }

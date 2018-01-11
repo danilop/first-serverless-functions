@@ -3,8 +3,8 @@
 console.log('Loading hello world function');
 
 exports.handler = (event, context, callback) => {
-    var name = "World";
-    var responseCode = 200;
+    let name = "World";
+    let responseCode = 200;
     console.log('request: ' + JSON.stringify(event));
 
     if (event.queryStringParameters !== null &&
@@ -19,11 +19,11 @@ exports.handler = (event, context, callback) => {
         }
     }
 
-    var responseBody = {
+    const responseBody = {
         message: 'Hello ' + name + '!'
     };
 
-    var response = {
+    const response = {
         statusCode: responseCode,
         headers: {
           'x-custom-header' : 'my custom header value'
