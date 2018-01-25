@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 const logLevels = { error: 4, warn: 3, info: 2, verbose: 1, debug: 0 };
 
