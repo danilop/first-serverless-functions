@@ -6,17 +6,20 @@ const salutation = ('SALUTATION' in process.env) ? process.env.SALUTATION : 'Hel
 
 console.log('salutation: ' + salutation);
 
-exports.handler = (event, context, callback) => {
-    console.log('Received event:',
-        JSON.stringify(event, null, 2));
-    let name = '';
-    if ('name' in event) {
-        name = event.name;
-        console.log('name: ', name);
-    } else {
+// Your business logic
+function greetingsFor(name) {
+    console.log('name: ', name);
+    if ((name == undefined) || (name == '')) {
         name = 'World';
     }
     const greetings = salutation + ' ' + name + '!';
     console.log(greetings);
-    callback(null, greetings);
+    return greetings;
+}
+
+// Event wrapper
+exports.handler = async (event, context) => {
+    console.log('Received event:',
+        JSON.stringify(event, null, 2));
+    return greetingsFor(event.name);
 };

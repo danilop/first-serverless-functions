@@ -1,36 +1,55 @@
 "use strict";
 
-console.log('Loading hello world function');
+console.log('Loading function');
 
-exports.handler = (event, context, callback) => {
-    let name = "World";
-    let responseCode = 200;
-    console.log('request: ' + JSON.stringify(event));
+// Your business logic
+function greetingsFor(name) {
+    console.log('name: ', name);
+    if ((name == undefined) || (name == '')) {
+        name = 'World';
+    }
+    const greetings = 'Hello ' + name + '!';
+    console.log('greetings: ', greetings);
+    return greetings;
+}
 
-    if (event.queryStringParameters !== null &&
-      event.queryStringParameters !== undefined) {
-        if ('name' in event.queryStringParameters) {
-            name = event.queryStringParameters.name;
-            console.log('Received name: ' + name);
-        }
-        if ('httpStatus' in event.queryStringParameters) {
-            responseCode = event.queryStringParameters.httpStatus;
-            console.log('Received http status: ' + responseCode);
-        }
+// Event wrapper for Amazon API Gateway
+exports.handler = async (event, context) => {
+
+    function buildResponse(message) {
+        const responseCode = 200;
+        const responseBody = {
+            message: message
+        };
+        const response = {
+            statusCode: responseCode,
+            headers: {
+              'x-custom-header' : 'my custom header value'
+            },
+            body: JSON.stringify(responseBody)
+        };
+        console.log('response: ' + JSON.stringify(response))
+        return response;
     }
 
-    const responseBody = {
-        message: 'Hello ' + name + '!'
-    };
+    console.log('request: ' + JSON.stringify(event));
 
-    const response = {
-        statusCode: responseCode,
-        headers: {
-          'x-custom-header' : 'my custom header value'
-        },
-        body: JSON.stringify(responseBody)
-    };
-
-    console.log('response: ' + JSON.stringify(response))
-    callback(null, response);
+    let name; // default value is undefined    
+    if (event.queryStringParameters != null) {
+        name = event.queryStringParameters.name;
+    }
+    
+    return buildResponse(greetingsFor(name));
 };
+
+// If not running on AWS Lambda, use Express
+if (!(process.env.LAMBDA_TASK_ROOT && process.env.AWS_EXECUTION_ENV)) {
+    const express = require('express')
+    const app = express()
+    
+    app.get('/', function (req, res) {
+      res.send(greetingsFor(req.query.name));
+    })
+    
+    app.listen(process.env.PORT || 3000)
+}
